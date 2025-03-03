@@ -1,26 +1,47 @@
 name: mlops-two-testing-pipeline
 on: [push]
+
+# Add permissions to fix the comment creation issue
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   run:
-    runs-on: [ubuntu-latest]
-    container: docker://dvcorg/cml-py3:latest
+    runs-on: ubuntu-latest
+    # Remove container to avoid glibc compatibility issues
     steps:
       - uses: actions/checkout@v2
-      - name: 'Train my model'
-        env:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          fetch-depth: 0  # This is important for DVC to access git history
+      
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      
+      - name: Install DVC and dependencies
         run: |
-
-          # Your ML workflow goes here
           pip install -r requirements.txt
+          pip install dvc
+      
+      - name: 'Setup CML'
+        uses: iterative/setup-cml@v1
+      
+      - name: 'Train and evaluate model'
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Run your DVC pipeline
           dvc repro
           
-          git fetch --prune
-          
+          # Generate metrics comparison
           dvc metrics diff --show-md main > report.md
           
-          # Add a figure into report
-          echo "## ROC Graph for the model"
-          cml-publish ROC.png --md >> report.md
+          # Add figure to report
+          echo -e "\n## ROC Graph for the model" >> report.md
+          echo "![](./ROC.png)" >> report.md
           
-          cml-send-comment report.md
+          # Use updated CML command
+          cml comment create report.md
