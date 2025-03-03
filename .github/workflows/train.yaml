@@ -5,6 +5,7 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
+  statuses: write  # Add this permission
 
 jobs:
   run:
@@ -19,45 +20,38 @@ jobs:
         with:
           python-version: '3.8'
       
-      - name: Update requirements.txt
-        run: |
-          # Update sklearn to scikit-learn in requirements.txt
-          sed -i 's/sklearn/scikit-learn/g' requirements.txt
-          # Add gdown to requirements if not already there
-          if ! grep -q "gdown" requirements.txt; then
-            echo "gdown" >> requirements.txt
-          fi
-          cat requirements.txt
-      
       - name: Install DVC and dependencies
         run: |
-          pip install -r requirements.txt
+          pip install scikit-learn pandas numpy matplotlib seaborn
           pip install dvc gdown
       
-      - name: 'Setup CML'
-        uses: iterative/setup-cml@v1
-      
       - name: 'Train and evaluate model'
-        env:
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Run your DVC pipeline
           dvc repro
           
-          # Generate metrics comparison
-          dvc metrics diff --show-md main > report.md || echo "## Model Metrics" > report.md
-          
-          # If dvc metrics diff fails, use metrics.json directly
-          if [ ! -s report.md ]; then
-            echo "## Model Metrics" > report.md
-            echo '```json' >> report.md
-            cat metrics.json >> report.md
-            echo '```' >> report.md
-          fi
+          # Create metrics report from metrics.json
+          echo "## Model Metrics" > report.md
+          echo '```json' >> report.md
+          cat metrics.json >> report.md
+          echo '```' >> report.md
           
           # Add figure to report
           echo -e "\n## ROC Graph for the model" >> report.md
-          echo "![](./ROC.png)" >> report.md
-          
-          # Use updated CML command
-          cml comment create report.md
+          echo "![ROC Curve](ROC.png)" >> report.md
+      
+      # Use GitHub's own action to upload artifacts instead of CML
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: model-results
+          path: |
+            ROC.png
+            metrics.json
+            report.md
+      
+      # Use a different action for creating comments
+      - name: Create commit comment
+        uses: peter-evans/commit-comment@v2
+        with:
+          body-path: report.md
