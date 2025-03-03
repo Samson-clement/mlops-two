@@ -23,30 +23,33 @@ jobs:
         run: |
           # Run your DVC pipeline
           dvc repro
-          
-          # Format metrics in a more readable way
+      
+      - name: 'Create report'
+        run: |
+          # Create a basic report header
           echo "## Model Metrics" > report.md
           echo "" >> report.md
           echo "| Metric | Value |" >> report.md
           echo "| ------ | ----- |" >> report.md
           
-          # Extract and format metrics from JSON using Python
-          python -c "
+          # Create a separate Python script to format metrics
+          cat > format_metrics.py << 'EOF'
 import json
 with open('metrics.json', 'r') as f:
     metrics = json.load(f)
 for key, value in metrics.items():
-    formatted_key = key.replace('_', ' ').title()
-    print(f'| {formatted_key} | {value:.4f} |')
-" >> report.md
+    formatted_key = key.replace('_', ' ').replace('-', ' ').title()
+    print(f"| {formatted_key} | {value:.4f} |")
+EOF
           
+          # Run the Python script and append output to report
+          python format_metrics.py >> report.md
+          
+          # Add ROC curve section
           echo "" >> report.md
           echo "## ROC Graph for the model" >> report.md
-          
-          # Reference the ROC image
           echo "" >> report.md
-          ROC_URL="https://github.com/$GITHUB_REPOSITORY/raw/$GITHUB_SHA/ROC.png"
-          echo "<img src=\"$ROC_URL\" width=\"600\">" >> report.md
+          echo "ROC curve is available in the artifacts as ROC.png" >> report.md
       
       # Upload artifacts
       - name: Upload artifacts
