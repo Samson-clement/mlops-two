@@ -30,21 +30,23 @@ jobs:
           echo "| Metric | Value |" >> report.md
           echo "| ------ | ----- |" >> report.md
           
-          # Extract and format metrics from JSON
+          # Extract and format metrics from JSON using Python
           python -c "
 import json
 with open('metrics.json', 'r') as f:
     metrics = json.load(f)
 for key, value in metrics.items():
-    print(f'| {key} | {value:.4f} |')
-          " >> report.md
+    formatted_key = key.replace('_', ' ').title()
+    print(f'| {formatted_key} | {value:.4f} |')
+" >> report.md
           
           echo "" >> report.md
           echo "## ROC Graph for the model" >> report.md
           
-          # Save a base64 encoded version of the image
+          # Reference the ROC image
           echo "" >> report.md
-          echo '<img src="https://github.com/'$GITHUB_REPOSITORY'/raw/'$GITHUB_SHA'/ROC.png" width="600">' >> report.md
+          ROC_URL="https://github.com/$GITHUB_REPOSITORY/raw/$GITHUB_SHA/ROC.png"
+          echo "<img src=\"$ROC_URL\" width=\"600\">" >> report.md
       
       # Upload artifacts
       - name: Upload artifacts
