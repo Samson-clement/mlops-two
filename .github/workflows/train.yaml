@@ -5,18 +5,18 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
-  statuses: write  # Add this permission
+  statuses: write
 
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # This is important for DVC to access git history
+          fetch-depth: 0
       
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: '3.8'
       
@@ -40,9 +40,9 @@ jobs:
           echo -e "\n## ROC Graph for the model" >> report.md
           echo "![ROC Curve](ROC.png)" >> report.md
       
-      # Use GitHub's own action to upload artifacts instead of CML
+      # Use GitHub's own action to upload artifacts (updated to v4)
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: model-results
           path: |
@@ -50,8 +50,8 @@ jobs:
             metrics.json
             report.md
       
-      # Use a different action for creating comments
+      # Use a different action for creating comments (updated to the latest version)
       - name: Create commit comment
-        uses: peter-evans/commit-comment@v2
+        uses: peter-evans/commit-comment@v3
         with:
           body-path: report.md
