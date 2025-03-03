@@ -24,32 +24,15 @@ jobs:
           # Run your DVC pipeline
           dvc repro
       
-      - name: 'Create report'
+      - name: 'Create basic report'
         run: |
-          # Create a basic report header
+          # Simple report without complex formatting
           echo "## Model Metrics" > report.md
           echo "" >> report.md
-          echo "| Metric | Value |" >> report.md
-          echo "| ------ | ----- |" >> report.md
-          
-          # Create a separate Python script to format metrics
-          cat > format_metrics.py << 'EOF'
-import json
-with open('metrics.json', 'r') as f:
-    metrics = json.load(f)
-for key, value in metrics.items():
-    formatted_key = key.replace('_', ' ').replace('-', ' ').title()
-    print(f"| {formatted_key} | {value:.4f} |")
-EOF
-          
-          # Run the Python script and append output to report
-          python format_metrics.py >> report.md
-          
-          # Add ROC curve section
+          cat metrics.json >> report.md
           echo "" >> report.md
-          echo "## ROC Graph for the model" >> report.md
-          echo "" >> report.md
-          echo "ROC curve is available in the artifacts as ROC.png" >> report.md
+          echo "## ROC Graph" >> report.md
+          echo "ROC curve is available in the artifacts." >> report.md
       
       # Upload artifacts
       - name: Upload artifacts
