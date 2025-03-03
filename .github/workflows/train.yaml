@@ -24,15 +24,27 @@ jobs:
           # Run your DVC pipeline
           dvc repro
           
-          # Create metrics report
+          # Format metrics in a more readable way
           echo "## Model Metrics" > report.md
-          echo '```json' >> report.md
-          cat metrics.json >> report.md
-          echo '```' >> report.md
+          echo "" >> report.md
+          echo "| Metric | Value |" >> report.md
+          echo "| ------ | ----- |" >> report.md
           
-          # Add figure to report
-          echo -e "\n## ROC Graph for the model" >> report.md
-          echo "![ROC Curve](ROC.png)" >> report.md
+          # Extract and format metrics from JSON
+          python -c "
+import json
+with open('metrics.json', 'r') as f:
+    metrics = json.load(f)
+for key, value in metrics.items():
+    print(f'| {key} | {value:.4f} |')
+          " >> report.md
+          
+          echo "" >> report.md
+          echo "## ROC Graph for the model" >> report.md
+          
+          # Save a base64 encoded version of the image
+          echo "" >> report.md
+          echo '<img src="https://github.com/'$GITHUB_REPOSITORY'/raw/'$GITHUB_SHA'/ROC.png" width="600">' >> report.md
       
       # Upload artifacts
       - name: Upload artifacts
