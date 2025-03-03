@@ -19,34 +19,36 @@ jobs:
           pip install scikit-learn pandas numpy matplotlib seaborn
           pip install dvc gdown
       
-      - name: 'Train and evaluate model'
+      - name: Train model
         run: |
-          # Run your DVC pipeline
           dvc repro
       
-      - name: 'Create basic report'
+      - name: Setup CML
+        uses: iterative/setup-cml@v1
+        
+      - name: Generate CML report with metrics and ROC
+        env:
+          REPO_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          # Simple report without complex formatting
           echo "## Model Metrics" > report.md
           echo "" >> report.md
-          cat metrics.json >> report.md
+          echo "### Model Accuracy" >> report.md
+          echo "" >> report.md
+          python -c "import json; data = json.load(open('metrics.json')); print(f'- Dummy: {data[\"accuracy_dummy\"]:.4f}')" >> report.md
+          python -c "import json; data = json.load(open('metrics.json')); print(f'- KNN: {data[\"accuracy_KNN\"]:.4f}')" >> report.md
+          python -c "import json; data = json.load(open('metrics.json')); print(f'- Logistic Regression: {data[\"accuracy_logistic-regression\"]:.4f}')" >> report.md
+          
+          echo "" >> report.md
+          echo "### AUC Values" >> report.md
+          echo "" >> report.md
+          python -c "import json; data = json.load(open('metrics.json')); print(f'- Dummy: {data[\"AUC_dummy\"]:.4f}')" >> report.md
+          python -c "import json; data = json.load(open('metrics.json')); print(f'- KNN: {data[\"AUC_KNN\"]:.4f}')" >> report.md
+          python -c "import json; data = json.load(open('metrics.json')); print(f'- Logistic Regression: {data[\"AUC_logistic-regression\"]:.4f}')" >> report.md
+          
           echo "" >> report.md
           echo "## ROC Graph" >> report.md
-          echo "ROC curve is available in the artifacts." >> report.md
-      
-      # Upload artifacts
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: model-results
-          path: |
-            ROC.png
-            metrics.json
-            report.md
-      
-      # Use commit comment action with PAT
-      - name: Create commit comment
-        uses: peter-evans/commit-comment@v3
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
-          body-path: report.md
+          echo "Model performance metrics are on the plot below." >> report.md
+          echo "" >> report.md
+          echo "![](./ROC.png)" >> report.md
+          
+          cml comment create report.md
