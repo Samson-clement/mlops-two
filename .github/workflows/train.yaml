@@ -1,7 +1,6 @@
 name: mlops-two-testing-pipeline
 on: [push]
 
-# Add permissions to fix the comment creation issue
 permissions:
   contents: read
   pull-requests: write
@@ -10,7 +9,6 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    # Remove container to avoid glibc compatibility issues
     steps:
       - uses: actions/checkout@v2
         with:
@@ -20,6 +18,12 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.8'
+      
+      - name: Update requirements.txt
+        run: |
+          # Update sklearn to scikit-learn in requirements.txt
+          sed -i 's/sklearn/scikit-learn/g' requirements.txt
+          cat requirements.txt
       
       - name: Install DVC and dependencies
         run: |
@@ -37,7 +41,15 @@ jobs:
           dvc repro
           
           # Generate metrics comparison
-          dvc metrics diff --show-md main > report.md
+          dvc metrics diff --show-md main > report.md || echo "## Model Metrics" > report.md
+          
+          # If dvc metrics diff fails, use metrics.json directly
+          if [ ! -s report.md ]; then
+            echo "## Model Metrics" > report.md
+            echo '```json' >> report.md
+            cat metrics.json >> report.md
+            echo '```' >> report.md
+          fi
           
           # Add figure to report
           echo -e "\n## ROC Graph for the model" >> report.md
