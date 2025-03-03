@@ -23,12 +23,16 @@ jobs:
         run: |
           # Update sklearn to scikit-learn in requirements.txt
           sed -i 's/sklearn/scikit-learn/g' requirements.txt
+          # Add gdown to requirements if not already there
+          if ! grep -q "gdown" requirements.txt; then
+            echo "gdown" >> requirements.txt
+          fi
           cat requirements.txt
       
       - name: Install DVC and dependencies
         run: |
           pip install -r requirements.txt
-          pip install dvc
+          pip install dvc gdown
       
       - name: 'Setup CML'
         uses: iterative/setup-cml@v1
